@@ -1,0 +1,22 @@
+name: social
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    - python=3.8
+    - numpy
+    - scipy
+    - matplotlib
+    - pandas
+    - nb_conda
+    - geopandas
+    - shapely
+    - cartopy
+    - jupyter
+    - seaborn
+    - descartes
+    - xlrd
+    - scikit-learn
+    - plotly
+    - ipywidgets
+    - dash
