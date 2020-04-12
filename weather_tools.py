@@ -74,7 +74,7 @@ def df_from_file(stationID,year):
 
     def extract_Temp(row):
         result = re.findall(r'24 HR AVG TEMP \(F\):(\s)?(?P<Temperature>\d\d)',row)
-        if len(date) > 0:
+        if result == []:
             result = [(np.nan,np.nan)]
         return result[-1][1]
 
