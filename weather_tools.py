@@ -1,17 +1,18 @@
-'''This code extracts weather data from the NOAA ASOS system : https://www.weather.gov/asos/asostech
+# This code extracts weather data from the NOAA ASOS system : https://www.weather.gov/asos/asostech
 
-All the ASOS data can be accessed via ftp from their server : ftp://ftp.ncdc.noaa.gov/pub/data/noaa
+# All the ASOS data can be accessed via ftp from their server : ftp://ftp.ncdc.noaa.gov/pub/data/noaa
 
-Within this there are folders for each years data named 'yyyy'.
+# Within this there are folders for each years data named 'yyyy'.
 
-Inside each year there are gzipped files for each weather station in the network. 
+# Inside each year there are gzipped files for each weather station in the network. 
 
-The name of each file follows a pattern given by: AAAAAA-BBBBBB-YYYY.gz. For example,
-723150-03812-2006 corresponds with USAF number 723150 and WBAN number 03812.
+# The name of each file follows a pattern given by: AAAAAA-BBBBBB-YYYY.gz.
+# For example,
+# 723150-03812-2006 corresponds with USAF number 723150 and WBAN number 03812.
 
-USAF and WBAN are identifiers for each station and their information is available in the **ASOS_stations.txt** file
+# USAF and WBAN are identifiers for each station and their information is available in the **ASOS_stations.txt** file
     
-YYYY stands for year'''
+# YYYY stands for year
 
 
 
