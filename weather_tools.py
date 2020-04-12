@@ -124,10 +124,8 @@ def state_years(state, start_year, end_year):
     df_list = []
     for year in years:
         xx=all_stations_for_state_year(state,year)
-        xx.rename(columns = {'MEAN_T' : str(year)}, inplace = True)
-        df_list.append(xx[[str(year),'M/D']])
+        df_list.append(xx[['MEAN_T']])
     df = df_list[0] 
     for frame in df_list[1:]:
-        df = df.merge(frame, on = 'M/D', how ='left')
-    df = df.sort_index(axis =1)
-    return df 
+        df = df.append(frame)
+    return df
