@@ -1,19 +1,22 @@
-# This code extracts weather data from the NOAA ASOS system : https://www.weather.gov/asos/asostech
+# This code extracts weather data from the NOAA ASOS system :
+# https://www.weather.gov/asos/asostech
 
-# All the ASOS data can be accessed via ftp from their server : ftp://ftp.ncdc.noaa.gov/pub/data/noaa
+# All the ASOS data can be accessed via ftp from their server :
+# ftp://ftp.ncdc.noaa.gov/pub/data/noaa
 
 # Within this there are folders for each years data named 'yyyy'.
 
-# Inside each year there are gzipped files for each weather station in the network. 
+# Inside each year there are gzipped files for each weather station in the
+# network.
 
 # The name of each file follows a pattern given by: AAAAAA-BBBBBB-YYYY.gz.
 # For example,
 # 723150-03812-2006 corresponds with USAF number 723150 and WBAN number 03812.
 
-# USAF and WBAN are identifiers for each station and their information is available in the **ASOS_stations.txt** file
-    
-# YYYY stands for year
+# USAF and WBAN are identifiers for each station and their information is
+# available in the **ASOS_stations.txt** file
 
+# YYYY stands for year
 
 
 # Import statements
@@ -23,10 +26,9 @@ import numpy as np
 import re
 
 
-
 def generate_stationID_dict():
     """Generate a dict of state name : stationID key/value pairs
-   
+
     stationID is the string "USAF identifier-WBAN identifier"
     In the stations DataFrame:
     USAF = Air Force station ID. May contain a letter in the first position.
@@ -34,102 +36,115 @@ def generate_stationID_dict():
     CTRY = FIPS country ID
     ST = State for US stations
     """
-    
 
-
-    filepath_stations = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt"
-    cols_to_use = ['USAF', 'WBAN','CTRY', 'ST']
-    df_stations = pd.read_fwf(filepath_stations, skiprows = 20, header =0, usecols = cols_to_use)
-    df_stations_US = df_stations[df_stations.CTRY =='US'].copy()
+    filepath_stations = (
+        "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt")
+    cols_to_use = ['USAF', 'WBAN', 'CTRY', 'ST']
+    df_stations = pd.read_fwf(
+        filepath_stations, skiprows=20, header=0, usecols=cols_to_use)
+    df_stations_US = df_stations[df_stations.CTRY == 'US'].copy()
     df_stations_US.WBAN = df_stations_US.WBAN.astype('int64')
-    df_stations_US.dropna(inplace =True)
-    df_stations_US = df_stations_US[df_stations_US.WBAN !=99999].copy()
+    df_stations_US.dropna(inplace=True)
+    df_stations_US = df_stations_US[df_stations_US.WBAN != 99999].copy()
 
     def my_func(row):
-        return str(row.USAF)+ '-' + str(row.WBAN).zfill(5)
-    df_stations_US['stationID'] = df_stations_US.apply(my_func, axis =1)
+        return str(row.USAF) + '-' + str(row.WBAN).zfill(5)
+    df_stations_US['stationID'] = df_stations_US.apply(my_func, axis=1)
 
     states = pd.unique(df_stations_US.ST.values)
     stations_in_state = {}
     for i in range(len(states)):
-        stations_in_state[states[i]] = list(df_stations_US[df_stations_US.ST == states[i]].stationID.values)
+        stations_in_state[states[i]] = list(
+            df_stations_US[df_stations_US.ST == states[i]].stationID.values)
     return stations_in_state
 stations_in_state = generate_stationID_dict()
 
 
+def df_from_file(stationID, year):
+    """Takes stationID and year and outputs a dataframe with Temperature
 
-def df_from_file(stationID,year):
-    """This takes the stationID and year and outputs a dataframe with the Temperature readings.
-    Note that some tempertaure readings are missing in general."""
-    
+    Note that some tempertaure readings are missing in general.
+    """
+
     url_common = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/"
-    url_ftp = url_common + str(year)+"/"+ stationID + "-"+  str(year)+".gz"
-    
-    WBAN = re.findall(r'(.*)-(.*)',stationID)
+    url_ftp = url_common + str(year) + "/" + \
+        stationID + "-" + str(year) + ".gz"
+
+    WBAN = re.findall(r'(.*)-(.*)', stationID)
     WBAN = WBAN[0][1]
-    
+
     #df = df_tmp[0].str.extractall(r'24 HR AVG TEMP \(F\):(\s)?(?P<Temperature>\d\d)')
 
     def extract_Temp(row):
-        result = re.findall(r'24 HR AVG TEMP \(F\):(\s)?(?P<Temperature>\d\d)',row)
+        result = re.findall(
+            r'24 HR AVG TEMP \(F\):(\s)?(?P<Temperature>\d\d)', row)
         if len(result) == 0:
-            result = [(np.nan,np.nan)]
+            result = [(np.nan, np.nan)]
         return result[-1][1]
 
     def extract_date(row):
-        date = [np.nan,np.nan,np.nan]
-        date = re.findall(WBAN + r'(\d\d\d\d)(\d\d)(\d\d)',row)
-        if date != []: 
-            date =  date[0][0]+ date[0][1] +  date[0][2]
+        date = [np.nan, np.nan, np.nan]
+        date = re.findall(WBAN + r'(\d\d\d\d)(\d\d)(\d\d)', row)
+        if date != []:
+            date = date[0][0] + date[0][1] + date[0][2]
         return date
     try:
         df = pd.read_csv(url_ftp, compression='gzip', header=None)
-        df['TEMPERATURE'+ stationID] = df[0].apply(extract_Temp)
+        df['TEMPERATURE' + stationID] = df[0].apply(extract_Temp)
         df['Date'] = df[0].apply(extract_date)
-        df.dropna(inplace =True)
-        df.drop(columns = [0], inplace=True)
+        df.dropna(inplace=True)
+        df.drop(columns=[0], inplace=True)
         df['Date'] = pd.to_datetime(df['Date'])
-        df['TEMPERATURE'+ stationID] = df['TEMPERATURE'+ stationID].astype('int64')
-        df.reset_index(inplace =True)
-        df.drop(columns = ['index'], inplace=True)
+        df['TEMPERATURE' + stationID] = df['TEMPERATURE' +
+                                           stationID].astype('int64')
+        df.reset_index(inplace=True)
+        df.drop(columns=['index'], inplace=True)
         return df
-    except (pd.errors.ParserError, OSError, ValueError) as e:#URLError:
+    except (pd.errors.ParserError, OSError, ValueError) as e:  # URLError:
         #print('No good')
         print(f'{e} with file: ' + url_ftp)
-        Date = pd.date_range(str(year)+'-01-01', str(year)+'-12-31')
-        df = pd.DataFrame(data =Date, columns =['Date'])
+        Date = pd.date_range(str(year) + '-01-01', str(year) + '-12-31')
+        df = pd.DataFrame(data=Date, columns=['Date'])
         return df
 
 
-def all_stations_for_state_year(state,year):
-    """ This function reads data from all the stations in a particular state for a particular year 
-    it returns a dataframe with all the dates in that year temperatures. last column contains mean temperatures. """
-    
+def all_stations_for_state_year(state, year):
+    """Reads data from all stations in a given state and year
+
+    Returns a dataframe with all the dates in that year temperatures. 
+    The last column contains mean temperatures.
+    """
+
     df_list = []
-    Date = pd.date_range(str(year)+'-01-01', str(year)+'-12-31')
-    df = pd.DataFrame(data =Date, columns =['Date'])
+    Date = pd.date_range(str(year) + '-01-01', str(year) + '-12-31')
+    df = pd.DataFrame(data=Date, columns=['Date'])
     for stID in stations_in_state[state]:
-        #print(stID)
-        xx = df_from_file(stID,year)
+        # print(stID)
+        xx = df_from_file(stID, year)
         # put code here which gets rid of leap years?
         df_list.append(xx)
     for frame in df_list:
-        df = df.merge(frame, on = 'Date', how ='left')
-    df.set_index('Date', inplace = True)
-    df['MEAN_T'] = df.mean(axis =1)
+        df = df.merge(frame, on='Date', how='left')
+    df.set_index('Date', inplace=True)
+    df['MEAN_T'] = df.mean(axis=1)
     df['M/D'] = df.index.strftime('%m/%d')
     return df
 
 
-
 def state_years(state, start_year, end_year):
-    """ Returns a single df with the mean temp data for all years between start-year and end year"""
-    years  = range(start_year, end_year+1,1)
+    """Mean temperature data for all years in range
+
+
+    Year range is (start_year, end_year) inclusive
+
+    Returns a single DataFrame
+    """
+    years = range(start_year, end_year + 1, 1)
     df_list = []
     for year in years:
-        xx = all_stations_for_state_year(state,year)
+        xx = all_stations_for_state_year(state, year)
         df_list.append(xx[['MEAN_T']])
-    df = df_list[0] 
+    df = df_list[0]
     for frame in df_list[1:]:
         df = df.append(frame)
     return df
