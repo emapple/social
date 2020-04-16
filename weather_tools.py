@@ -74,7 +74,7 @@ def df_from_file(stationID,year):
 
     def extract_Temp(row):
         result = re.findall(r'24 HR AVG TEMP \(F\):(\s)?(?P<Temperature>\d\d)',row)
-        if len(date) > 0:
+        if len(result) == 0:
             result = [(np.nan,np.nan)]
         return result[-1][1]
 
@@ -95,8 +95,9 @@ def df_from_file(stationID,year):
         df.reset_index(inplace =True)
         df.drop(columns = ['index'], inplace=True)
         return df
-    except:
+    except (pd.errors.ParserError, OSError, ValueError) as e:#URLError:
         #print('No good')
+        print(f'{e} with file: ' + url_ftp)
         Date = pd.date_range(str(year)+'-01-01', str(year)+'-12-31')
         df = pd.DataFrame(data =Date, columns =['Date'])
         return df
